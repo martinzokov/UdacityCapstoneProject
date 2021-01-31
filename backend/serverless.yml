@@ -1,0 +1,256 @@
+service:
+  name: deliciously
+
+plugins:
+  - serverless-webpack
+  - serverless-iam-roles-per-function
+  - serverless-aws-documentation
+  - serverless-dynamodb-local
+  - serverless-offline
+  - serverless-reqvalidator-plugin
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-west-1'}
+
+  environment:
+    RECIPES_TABLE: Recipes-${self:provider.stage}
+    #_X_AMZN_TRACE_ID: abcdf123151 # use for local runs only
+    INDEX_NAME: INVERSE_KEY_IDX
+    IMAGES_S3_BUCKET: mz42-recipe-images-${self:provider.stage}
+    SIGNED_URL_EXPIRATION: 300
+
+  #tracing:
+  #  lambda: true
+  #  apiGateway: true
+
+
+custom:
+
+  serverless-offline:
+    port: 3003
+
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+    stages: # Add this section of the config
+      - dev
+
+  documentation:
+    api:
+      info:
+        version: v1.0.0
+        title: Udagram API
+        description: Serverless application for managing your own cookbook
+    # models:
+    #   - name: CreateTodoRequest
+    #     contentType: application/json
+    #     schema: ${file(models/create-todo-request.json)}
+    #   - name: UpdateTodoRequest
+    #     contentType: application/json
+    #     schema: ${file(models/update-todo-request.json)}
+
+functions:
+
+  Auth:
+    handler: src/lambda/auth/auth0Authorizer.handler
+
+  GetRecipes:
+    handler: src/lambda/http/getRecipes.handler
+    events:
+      - http:
+          method: get
+          path: recipes
+          cors: true
+          authorizer: Auth 
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}/index/${self:provider.environment.INDEX_NAME}
+
+  CreateRecipe:
+    handler: src/lambda/http/createRecipe.handler
+    events:
+      - http:
+          method: post
+          path: recipes
+          cors: true
+          reqValidatorName: RequestBodyValidator
+          authorizer: Auth 
+          # documentation:
+          #   requestModels:
+          #     'application/json': CreateTodoRequest
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}/index/${self:provider.environment.INDEX_NAME}
+
+  UpdateRecipe:
+    handler: src/lambda/http/updateRecipe.handler
+    events:
+      - http:
+          method: patch
+          path: recipes/{recipeId}
+          cors: true
+          reqValidatorName: RequestBodyValidator
+          authorizer: Auth 
+          # documentation:
+          #   requestModels:
+          #     'application/json': UpdateTodoRequest
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}/index/${self:provider.environment.INDEX_NAME}
+
+  DeleteRecipe:
+    handler: src/lambda/http/deleteRecipe.handler
+    events:
+      - http:
+          method: delete
+          path: recipes/{recipeId}
+          cors: true
+          authorizer: Auth 
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:DeleteItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:DeleteItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}/index/${self:provider.environment.INDEX_NAME}
+
+  # GenerateUploadUrl:
+  #   handler: src/lambda/http/generateUploadUrl.handler
+  #   events:
+  #     - http:
+  #         method: post
+  #         authorizer: Auth 
+  #         cors: true
+  #         path: todos/{todoId}/attachment
+  #   iamRoleStatements:
+  #     - Effect: Allow
+  #       Action:
+  #         - dynamodb:UpdateItem
+  #       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+  #     - Effect: Allow
+  #       Action:
+  #         - dynamodb:UpdateItem
+  #       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}/index/${self:provider.environment.INDEX_NAME}
+  #     - Effect: Allow
+  #       Action:
+  #         - s3:PutObject
+  #         - s3:GetObject
+  #       Resource: arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*
+  #     - Effect: Allow
+  #       Action:
+  #         - dynamodb:GetItem
+  #         - dynamodb:Query
+  #       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+  #     - Effect: Allow
+  #       Action:
+  #         - dynamodb:GetItem
+  #         - dynamodb:Query
+  #       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}/index/${self:provider.environment.INDEX_NAME}
+
+resources:
+  Resources:
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+    
+    RecipesDynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: partitionKey
+            AttributeType: S
+          - AttributeName: sortKey
+            AttributeType: S
+        KeySchema:
+          - AttributeName: partitionKey
+            KeyType: HASH
+          - AttributeName: sortKey
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.RECIPES_TABLE}
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.INDEX_NAME}
+            KeySchema:
+              - AttributeName: sortKey
+                KeyType: HASH
+              - AttributeName: partitionKey
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL # What attributes will be copied to an index
+
+    AttachmentsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.IMAGES_S3_BUCKET}
+        CorsConfiguration:
+          CorsRules:
+            -
+              AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+    RequestBodyValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: 'request-body-validator'
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        ValidateRequestBody: true
+        ValidateRequestParameters: false
+
+    BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        PolicyDocument:
+          Id: MyPolicy
+          Version: "2012-10-17"
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: 's3:GetObject'
+              Resource: 'arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*'
+        Bucket: !Ref AttachmentsBucket
