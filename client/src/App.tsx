@@ -8,7 +8,13 @@ import { LogIn } from './components/LogIn'
 import { NotFound } from './components/NotFound'
 import { Todos } from './components/Todos'
 
-import { CookiesProvider } from 'react-cookie';
+import { CookiesProvider } from 'react-cookie'
+import { Cookbook } from './components/cookbook/Cookbook'
+import { QueryClient, QueryClientProvider } from 'react-query'
+import RecipeDetails from './components/cookbook/RecipeDetails'
+
+const queryClient = new QueryClient()
+
 export interface AppProps {}
 
 export interface AppProps {
@@ -38,19 +44,21 @@ export default class App extends Component<AppProps, AppState> {
     return (
       <div>
         <CookiesProvider>
-        <Segment style={{ padding: '8em 0em' }} vertical>
-          <Grid container stackable verticalAlign="middle">
-            <Grid.Row>
-              <Grid.Column width={16}>
-                <Router history={this.props.history}>
-                  {this.generateMenu()}
+          <Segment style={{ padding: '8em 0em' }} vertical>
+            <Grid container stackable verticalAlign="middle">
+              <Grid.Row>
+                <Grid.Column width={16}>
+                  <QueryClientProvider client={queryClient}>
+                    <Router history={this.props.history}>
+                      {this.generateMenu()}
 
-                  {this.generateCurrentPage()}
-                </Router>
-              </Grid.Column>
-            </Grid.Row>
-          </Grid>
-        </Segment>
+                      {this.generateCurrentPage()}
+                    </Router>
+                  </QueryClientProvider>
+                </Grid.Column>
+              </Grid.Row>
+            </Grid>
+          </Segment>
         </CookiesProvider>
       </div>
     )
@@ -94,18 +102,25 @@ export default class App extends Component<AppProps, AppState> {
         <Route
           path="/"
           exact
-          render={props => {
-            return <Todos {...props} auth={this.props.auth} />
+          render={(props) => {
+            // return <Todos {...props} auth={this.props.auth} />
+            return <Cookbook {...props} auth={this.props.auth}></Cookbook>
           }}
         />
-
         <Route
+          path="/recipes/:recipeId"
+          exact
+          render={(props) => {
+            return <RecipeDetails {...props} />
+          }}
+        />
+        {/* <Route
           path="/todos/:todoId/edit"
           exact
           render={props => {
             return <EditTodo {...props} auth={this.props.auth} />
           }}
-        />
+        /> */}
 
         <Route component={NotFound} />
       </Switch>
