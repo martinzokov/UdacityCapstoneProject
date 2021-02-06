@@ -20,7 +20,7 @@ export async function getRecipes(): Promise<Recipe[]> {
   return response.data.items
 }
 
-export async function getRecipe(recipeId: string): Promise<Recipe[]> {
+export async function getRecipe(recipeId: string): Promise<Recipe> {
   console.log('Fetching recipes')
 
   const response = await Axios.get(`${apiEndpoint}/recipes/${recipeId}`, {

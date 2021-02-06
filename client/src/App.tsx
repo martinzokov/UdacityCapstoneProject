@@ -12,6 +12,7 @@ import { CookiesProvider } from 'react-cookie'
 import { Cookbook } from './components/cookbook/Cookbook'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import RecipeDetails from './components/cookbook/RecipeDetails'
+import { EditableRecipeDetails } from './components/cookbook/EditableRecipeDetails'
 
 const queryClient = new QueryClient()
 
@@ -108,12 +109,20 @@ export default class App extends Component<AppProps, AppState> {
           }}
         />
         <Route
+          path="/recipes/new"
+          exact
+          render={(props) => {
+            return <EditableRecipeDetails {...props} />
+          }}
+        />
+        <Route
           path="/recipes/:recipeId"
           exact
           render={(props) => {
             return <RecipeDetails {...props} />
           }}
         />
+
         {/* <Route
           path="/todos/:todoId/edit"
           exact

@@ -31,6 +31,7 @@ export const Cookbook = ({ auth, history }: CookbookProps) => {
 
   return (
     <>
+      <Button onClick={() => history.push(`/recipes/new`)} />
       {data ? (
         data.map((item: Recipe) => (
           <RecipeListItem
