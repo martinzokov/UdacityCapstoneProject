@@ -10,19 +10,34 @@ import {
   Icon,
   Input,
   List,
-  TextArea
+  Segment,
+  TextArea,
+  Image
 } from 'semantic-ui-react'
 import Auth from '../../auth/Auth'
 import { CookingSteps } from './CookingSteps'
 import { History } from 'history'
-import { CookingStep, Recipe } from '../../types/Recipe'
+import { CookingStep, Recipe, TimeScale } from '../../types/Recipe'
 import { ChangeEvent, SyntheticEvent, useState } from 'react'
 import styled from 'styled-components'
+import {
+  createRecipe,
+  getRecipe,
+  getUploadUrl,
+  updateRecipe,
+  uploadFile
+} from '../../api/cookbook-api'
+import { useQuery } from 'react-query'
 
 const PaddedContainer = styled(Container)`
   padding-bottom: 10px;
 `
 interface EditableRecipeDetailsProps {
+  match: {
+    params: {
+      recipeId: string
+    }
+  }
   history: History
 }
 
@@ -32,17 +47,42 @@ const prepInfoScale = [
 ]
 const data: any = {}
 export const EditableRecipeDetails = ({
+  match,
   history
 }: EditableRecipeDetailsProps) => {
-  const [recipeName, setRecipeName] = useState<string>('')
-  const [prepQuantity, setPrepQuantity] = useState<number>(0)
-  const [prepScale, setPrepScale] = useState<string>('minutes')
-  const [cookingQuantity, setCookingQuantity] = useState<number>(0)
-  const [cookingScale, setCookingScale] = useState<string>('minutes')
-  const [recipeDescription, setRecipeDescription] = useState<string>('')
-  const [ingridients, setIngridients] = useState<string[]>([])
+  const recipeId = match.params.recipeId
+
+  const { isLoading, error, data } = useQuery(['recipes', recipeId], () =>
+    getRecipe(recipeId)
+  )
+  const editMode = data != undefined
+  const [recipeName, setRecipeName] = useState<string>(
+    editMode ? data.recipeName : ''
+  )
+  const [prepQuantity, setPrepQuantity] = useState<number>(
+    editMode ? data.preparationInfo.preparationQuantity : 0
+  )
+  const [prepScale, setPrepScale] = useState<string>(
+    editMode ? data.preparationInfo.preparationScale : 'minutes'
+  )
+  const [cookingQuantity, setCookingQuantity] = useState<number>(
+    editMode ? data.preparationInfo.cookingQuantity : 0
+  )
+  const [cookingScale, setCookingScale] = useState<string>(
+    editMode ? data.preparationInfo.cookingScale : 'minutes'
+  )
+  const [recipeDescription, setRecipeDescription] = useState<string>(
+    editMode ? data.description : ''
+  )
+  const [ingridients, setIngridients] = useState<string[]>(
+    editMode ? data.ingridients : []
+  )
   const [newIngridient, setNewIngridient] = useState<string>('')
-  const [cookSteps, setCookingSteps] = useState<CookingStep[]>([])
+  const [cookSteps, setCookingSteps] = useState<CookingStep[]>(
+    editMode ? data.cookingSteps : []
+  )
+
+  const fileInputRef = React.createRef()
 
   const handleNameInput = (event: SyntheticEvent, data: object) => {
     // @ts-ignore
@@ -95,6 +135,58 @@ export const EditableRecipeDetails = ({
       step.description = description
     }
   }
+  const [file, setFile] = useState<any>()
+
+  const onFileChange = async (
+    stepIdx: number,
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files
+    if (!files) return
+
+    setFile(files[0])
+    const imageUploadUrls = await getUploadUrl(files[0].type.split('/')[1])
+    uploadFile(imageUploadUrls.uploadUrl, file).then(() => {
+      let step = cookSteps.find((s) => s.order === stepIdx)
+      if (step) {
+        step.imageUrl = imageUploadUrls.imgUrl
+        setCookingSteps([...cookSteps])
+      }
+    })
+  }
+
+  const handleRemoveImage = (stepIdx: number) => {
+    let step = cookSteps.find((s) => s.order === stepIdx)
+    if (step) {
+      step.imageUrl = ''
+      setCookingSteps([...cookSteps])
+    }
+  }
+
+  const onSaveRecipe = async () => {
+    const newOrUpdatedRecipe: Recipe = {
+      recipeName: recipeName,
+      cookingSteps: cookSteps,
+      description: recipeDescription,
+      ingridients: ingridients,
+      preparationInfo: {
+        preparationQuantity: prepQuantity,
+        preparationScale: prepScale as TimeScale,
+        cookingQuantity: cookingQuantity,
+        cookingScale: cookingScale as TimeScale
+      }
+    }
+    if (editMode) {
+      newOrUpdatedRecipe.partitionKey = recipeId
+      await updateRecipe(newOrUpdatedRecipe).then(() => {
+        history.push(`/recipes/${recipeId}`)
+      })
+    } else {
+      await createRecipe(newOrUpdatedRecipe).then(() => {
+        history.push('/')
+      })
+    }
+  }
   return (
     <Form>
       <Input
@@ -104,6 +196,7 @@ export const EditableRecipeDetails = ({
         size="large"
         icon="food"
         onChange={handleNameInput}
+        value={recipeName}
       />
       <Grid
         container
@@ -120,6 +213,7 @@ export const EditableRecipeDetails = ({
               <Input
                 style={{ width: '6em' }}
                 type="number"
+                value={prepQuantity}
                 //@ts-ignore
                 onChange={handlePrepQuantityInput}
                 action={
@@ -129,6 +223,7 @@ export const EditableRecipeDetails = ({
                     floating
                     options={prepInfoScale}
                     defaultValue="minutes"
+                    value={prepScale}
                     onChange={handlePrepScaleInput}
                   />
                 }
@@ -139,12 +234,14 @@ export const EditableRecipeDetails = ({
               <Input
                 style={{ width: '6em' }}
                 type="number"
+                value={cookingQuantity}
                 onChange={handleCookingQuantityInput}
                 action={
                   <Dropdown
                     button
                     basic
                     floating
+                    value={cookingScale}
                     options={prepInfoScale}
                     defaultValue="minutes"
                     onChange={handleCookingScaleInput}
@@ -157,6 +254,7 @@ export const EditableRecipeDetails = ({
                 placeholder="Describe recipe"
                 style={{ minHeight: 100 }}
                 onChange={handleDescriptionInput}
+                value={recipeDescription}
               />
             </Container>
           </Grid.Column>
@@ -200,21 +298,71 @@ export const EditableRecipeDetails = ({
                 <Card fluid>
                   <Card.Content>
                     <Card.Description>
-                      <TextArea
-                        onInput={(_, data) =>
-                          // @ts-ignore
-                          handleStepDescriptionInput(step.order, data.value)
-                        }
-                      />
+                      <Grid columns={2}>
+                        <Grid.Row>
+                          <Grid.Column width={10}>
+                            <TextArea
+                              floated="left"
+                              value={step.description}
+                              onInput={(_, data) =>
+                                handleStepDescriptionInput(
+                                  step.order,
+                                  // @ts-ignore
+                                  data.value
+                                )
+                              }
+                            />
+                          </Grid.Column>
+                          <Grid.Column width={6}>
+                            {step.imageUrl.length === 0 ? (
+                              <Form.Field>
+                                <Button
+                                  content="Add Image"
+                                  labelPosition="left"
+                                  icon="image"
+                                  //@ts-ignore
+                                  onClick={() => fileInputRef.current.click()}
+                                />
+                                <input
+                                  //@ts-ignore
+                                  ref={fileInputRef}
+                                  type="file"
+                                  accept="image/jpeg"
+                                  hidden
+                                  onChange={(event) =>
+                                    onFileChange(step.order, event)
+                                  }
+                                />
+                              </Form.Field>
+                            ) : (
+                              <Container>
+                                <Image src={step.imageUrl} />
+                                <Icon
+                                  link
+                                  circular
+                                  inverted
+                                  style={{
+                                    position: 'absolute',
+                                    top: 12,
+                                    right: 20
+                                  }}
+                                  name="close"
+                                  onClick={() => handleRemoveImage(step.order)}
+                                />
+                              </Container>
+                            )}
+                          </Grid.Column>
+                        </Grid.Row>
+                      </Grid>
                     </Card.Description>
                   </Card.Content>
                 </Card>
               </PaddedContainer>
             ))}
             <Button onClick={handleAddStep} icon="plus" />
-            {/* <CookingSteps steps={data.cookingSteps} /> */}
           </Grid.Column>
         </Grid.Row>
+        <Button onClick={onSaveRecipe}>Save Recipe</Button>
       </Grid>
     </Form>
   )

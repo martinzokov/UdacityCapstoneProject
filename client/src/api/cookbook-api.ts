@@ -61,7 +61,7 @@ export async function updateRecipe(updatedRecipe: Recipe): Promise<void> {
 }
 
 export async function deleteRecipe(recipeId: string): Promise<void> {
-  await Axios.delete(`${apiEndpoint}/todos/${recipeId}`, {
+  await Axios.delete(`${apiEndpoint}/recipes/${recipeId}`, {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${getIdToken()}`
@@ -77,9 +77,9 @@ function getIdToken(): string {
   return token
 }
 
-export async function getUploadUrl(todoId: string): Promise<string> {
+export async function getUploadUrl(type: string): Promise<ImageUploadResult> {
   const response = await Axios.post(
-    `${apiEndpoint}/todos/${todoId}/attachment`,
+    `${apiEndpoint}/recipes/attachment?fileType=${type}`,
     '',
     {
       headers: {
@@ -88,7 +88,7 @@ export async function getUploadUrl(todoId: string): Promise<string> {
       }
     }
   )
-  return response.data.uploadUrl
+  return { uploadUrl: response.data.uploadUrl, imgUrl: response.data.imgUrl }
 }
 
 export async function uploadFile(
@@ -96,4 +96,9 @@ export async function uploadFile(
   file: Buffer
 ): Promise<void> {
   await Axios.put(uploadUrl, file)
+}
+
+export interface ImageUploadResult {
+  uploadUrl: string
+  imgUrl: string
 }

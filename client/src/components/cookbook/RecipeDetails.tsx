@@ -15,7 +15,7 @@ import {
 import { CookingStep, Recipe } from '../../types/Recipe'
 
 import { History } from 'history'
-import { getRecipe } from '../../api/cookbook-api'
+import { deleteRecipe, getRecipe } from '../../api/cookbook-api'
 import { useQuery } from 'react-query'
 import { CookingSteps } from './CookingSteps'
 import { useState } from 'react'
@@ -26,15 +26,14 @@ interface RecipeDetailsProps {
       recipeId: string
     }
   }
+  history: History
 }
 
-const RecipeDetails = ({ match }: RecipeDetailsProps) => {
+const RecipeDetails = ({ match, history }: RecipeDetailsProps) => {
   const recipeId = match.params.recipeId
   const { isLoading, error, data } = useQuery(['recipes', recipeId], () =>
     getRecipe(recipeId)
   )
-
-  const [isEditing, setIsEditing] = useState(false)
 
   if (isLoading) return <Loader />
 
@@ -47,11 +46,20 @@ const RecipeDetails = ({ match }: RecipeDetailsProps) => {
           <Grid.Column width={12}>
             <Header as="h2">{data.recipeName}</Header>
           </Grid.Column>
-          <Grid.Column>
-            <Button icon="pencil" onClick={() => setIsEditing(!isEditing)} />
+          <Grid.Column width={3}>
+            <Button
+              icon="pencil"
+              onClick={(_) => history.push(`/recipes/${recipeId}/edit`)}
+            />
+            <Button
+              icon="trash"
+              onClick={(_) =>
+                deleteRecipe(recipeId).then(() => history.push(`/`))
+              }
+            />
           </Grid.Column>
         </Grid.Row>
-        {isEditing ? RednerEditingMode(data) : RenderReadOnly(data)}
+        {RenderReadOnly(data)}
       </Grid>
     </Container>
   )

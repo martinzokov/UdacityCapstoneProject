@@ -116,6 +116,13 @@ export default class App extends Component<AppProps, AppState> {
           }}
         />
         <Route
+          path="/recipes/:recipeId/edit"
+          exact
+          render={(props) => {
+            return <EditableRecipeDetails {...props} />
+          }}
+        />
+        <Route
           path="/recipes/:recipeId"
           exact
           render={(props) => {

@@ -163,38 +163,38 @@ functions:
           - dynamodb:DeleteItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}/index/${self:provider.environment.INDEX_NAME}
 
-  # GenerateUploadUrl:
-  #   handler: src/lambda/http/generateUploadUrl.handler
-  #   events:
-  #     - http:
-  #         method: post
-  #         authorizer: Auth
-  #         cors: true
-  #         path: todos/{todoId}/attachment
-  #   iamRoleStatements:
-  #     - Effect: Allow
-  #       Action:
-  #         - dynamodb:UpdateItem
-  #       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
-  #     - Effect: Allow
-  #       Action:
-  #         - dynamodb:UpdateItem
-  #       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}/index/${self:provider.environment.INDEX_NAME}
-  #     - Effect: Allow
-  #       Action:
-  #         - s3:PutObject
-  #         - s3:GetObject
-  #       Resource: arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*
-  #     - Effect: Allow
-  #       Action:
-  #         - dynamodb:GetItem
-  #         - dynamodb:Query
-  #       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
-  #     - Effect: Allow
-  #       Action:
-  #         - dynamodb:GetItem
-  #         - dynamodb:Query
-  #       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}/index/${self:provider.environment.INDEX_NAME}
+  GenerateUploadUrl:
+    handler: src/lambda/http/generateUploadUrl.handler
+    events:
+      - http:
+          method: post
+          authorizer: Auth
+          cors: true
+          path: recipes/attachment
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}/index/${self:provider.environment.INDEX_NAME}
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}/index/${self:provider.environment.INDEX_NAME}
 
 resources:
   Resources:
