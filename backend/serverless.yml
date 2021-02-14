@@ -22,6 +22,7 @@ provider:
     INDEX_NAME: INVERSE_KEY_IDX
     IMAGES_S3_BUCKET: mz42-recipe-images-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
+    ES_ENDPOINT: !GetAtt RecipeSearch.DomainEndpoint
 
   #tracing:
   #  lambda: true
@@ -63,6 +64,26 @@ functions:
       - http:
           method: get
           path: recipes
+          cors: true
+          authorizer: Auth
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}/index/${self:provider.environment.INDEX_NAME}
+
+  SearchRecipes:
+    handler: src/lambda/http/searchRecipes.handler
+    events:
+      - http:
+          method: get
+          path: recipes/search
           cors: true
           authorizer: Auth
     iamRoleStatements:
@@ -195,6 +216,12 @@ functions:
           - dynamodb:GetItem
           - dynamodb:Query
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.RECIPES_TABLE}/index/${self:provider.environment.INDEX_NAME}
+  SyncWithElasticsearch:
+    handler: src/lambda/dynamoDb/elasticSearchSync.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn: !GetAtt RecipesDynamoDBTable.StreamArn
 
 resources:
   Resources:
@@ -223,6 +250,8 @@ resources:
           - AttributeName: sortKey
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
         TableName: ${self:provider.environment.RECIPES_TABLE}
         GlobalSecondaryIndexes:
           - IndexName: ${self:provider.environment.INDEX_NAME}
@@ -233,6 +262,31 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL # What attributes will be copied to an index
+
+    RecipeSearch:
+      Type: AWS::Elasticsearch::Domain
+      Properties:
+        ElasticsearchVersion: "6.3"
+        DomainName: recipe-search-${self:provider.stage}
+        ElasticsearchClusterConfig:
+          DedicatedMasterEnabled: false
+          InstanceCount: "1"
+          ZoneAwarenessEnabled: false
+          InstanceType: t2.small.elasticsearch
+        EBSOptions:
+          EBSEnabled: true
+          Iops: 0
+          VolumeSize: 10
+          VolumeType: "gp2"
+
+        AccessPolicies:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: "*"
+              Action: "es:*"
+              Resource: arn:aws:es:${self:provider.region}:${AWS::AccountId}:domain/recipe-search-${self:provider.stage}/*
 
     AttachmentsBucket:
       Type: AWS::S3::Bucket

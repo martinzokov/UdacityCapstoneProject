@@ -77,6 +77,20 @@ function getIdToken(): string {
   return token
 }
 
+export async function searchRecipes(searchTerm: string): Promise<Recipe[]> {
+  const response = await Axios.get(
+    `${apiEndpoint}/recipes/search?searchTerm=${searchTerm}`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getIdToken()}`
+      }
+    }
+  )
+
+  return response.data.recipes
+}
+
 export async function getUploadUrl(type: string): Promise<ImageUploadResult> {
   const response = await Axios.post(
     `${apiEndpoint}/recipes/attachment?fileType=${type}`,

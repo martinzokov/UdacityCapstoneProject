@@ -1,6 +1,6 @@
-import React, { Component } from 'react'
+import React, { ChangeEvent, Component, useState } from 'react'
 import { Link, Route, Router, Switch } from 'react-router-dom'
-import { Grid, Menu, Segment } from 'semantic-ui-react'
+import { Grid, Icon, Input, Menu, Segment } from 'semantic-ui-react'
 
 import Auth from './auth/Auth'
 import { EditTodo } from './components/EditTodo'
@@ -13,6 +13,7 @@ import { Cookbook } from './components/cookbook/Cookbook'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import RecipeDetails from './components/cookbook/RecipeDetails'
 import { EditableRecipeDetails } from './components/cookbook/EditableRecipeDetails'
+import { RecipeSearch } from './components/cookbook/RecipeSerch'
 
 const queryClient = new QueryClient()
 
@@ -23,7 +24,9 @@ export interface AppProps {
   history: any
 }
 
-export interface AppState {}
+export interface AppState {
+  searchTerm: string
+}
 
 export default class App extends Component<AppProps, AppState> {
   constructor(props: AppProps) {
@@ -31,6 +34,7 @@ export default class App extends Component<AppProps, AppState> {
 
     this.handleLogin = this.handleLogin.bind(this)
     this.handleLogout = this.handleLogout.bind(this)
+    this.setState({ searchTerm: '' })
   }
 
   handleLogin() {
@@ -39,6 +43,17 @@ export default class App extends Component<AppProps, AppState> {
 
   handleLogout() {
     this.props.auth.logout()
+  }
+
+  handleSearchTermChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ searchTerm: event.target.value })
+  }
+
+  handleSearch = async (event: React.ChangeEvent<HTMLButtonElement>) => {
+    if (this.state.searchTerm.length > 0) {
+      this.setState({ searchTerm: '' })
+      this.props.history.push(`/recipes/search?q=${this.state.searchTerm}`)
+    }
   }
 
   render() {
@@ -51,7 +66,25 @@ export default class App extends Component<AppProps, AppState> {
                 <Grid.Column width={16}>
                   <QueryClientProvider client={queryClient}>
                     <Router history={this.props.history}>
-                      {this.generateMenu()}
+                      <Menu>
+                        <Menu.Item name="home">
+                          <Link to="/">Home</Link>
+                        </Menu.Item>
+                        <Menu.Item>
+                          <Input
+                            action={{
+                              color: 'teal',
+                              icon: 'search',
+                              onClick: this.handleSearch
+                            }}
+                            onChange={this.handleSearchTermChange}
+                            placeholder="Search..."
+                          />
+                        </Menu.Item>
+                        <Menu.Menu position="right">
+                          {this.logInLogOutButton()}
+                        </Menu.Menu>
+                      </Menu>
 
                       {this.generateCurrentPage()}
                     </Router>
@@ -71,7 +104,12 @@ export default class App extends Component<AppProps, AppState> {
         <Menu.Item name="home">
           <Link to="/">Home</Link>
         </Menu.Item>
-
+        <Menu.Item>
+          <Input
+            icon={{ name: 'search', circular: true, link: true }}
+            placeholder="Search..."
+          />
+        </Menu.Item>
         <Menu.Menu position="right">{this.logInLogOutButton()}</Menu.Menu>
       </Menu>
     )
@@ -120,6 +158,12 @@ export default class App extends Component<AppProps, AppState> {
           exact
           render={(props) => {
             return <EditableRecipeDetails {...props} />
+          }}
+        />
+        <Route
+          path="/recipes/search"
+          render={(props) => {
+            return <RecipeSearch {...props} />
           }}
         />
         <Route

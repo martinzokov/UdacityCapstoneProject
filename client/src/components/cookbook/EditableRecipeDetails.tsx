@@ -146,7 +146,7 @@ export const EditableRecipeDetails = ({
 
     setFile(files[0])
     const imageUploadUrls = await getUploadUrl(files[0].type.split('/')[1])
-    uploadFile(imageUploadUrls.uploadUrl, file).then(() => {
+    await uploadFile(imageUploadUrls.uploadUrl, file).then(() => {
       let step = cookSteps.find((s) => s.order === stepIdx)
       if (step) {
         step.imageUrl = imageUploadUrls.imgUrl
