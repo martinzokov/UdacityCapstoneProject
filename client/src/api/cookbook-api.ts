@@ -108,8 +108,8 @@ export async function getUploadUrl(type: string): Promise<ImageUploadResult> {
 export async function uploadFile(
   uploadUrl: string,
   file: Buffer
-): Promise<void> {
-  await Axios.put(uploadUrl, file)
+): Promise<any> {
+  return Axios.put(uploadUrl, file)
 }
 
 export interface ImageUploadResult {

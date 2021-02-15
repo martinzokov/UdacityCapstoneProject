@@ -28,6 +28,9 @@ import {
   uploadFile
 } from '../../api/cookbook-api'
 import { useQuery } from 'react-query'
+import { debug } from 'console'
+
+import { FilePicker } from 'react-file-picker'
 
 const PaddedContainer = styled(Container)`
   padding-bottom: 10px;
@@ -82,8 +85,6 @@ export const EditableRecipeDetails = ({
     editMode ? data.cookingSteps : []
   )
 
-  const fileInputRef = React.createRef()
-
   const handleNameInput = (event: SyntheticEvent, data: object) => {
     // @ts-ignore
     setRecipeName(data.value)
@@ -119,6 +120,13 @@ export const EditableRecipeDetails = ({
       setNewIngridient('')
     }
   }
+  const [fileInputRefs, setFileInputRefs] = useState<
+    Map<number, React.RefObject<any>>
+  >(new Map<number, React.RefObject<any>>())
+  cookSteps.forEach((step) => {
+    fileInputRefs.set(step.order, React.createRef())
+  })
+
   const handleAddStep = () => {
     let newStep: CookingStep = {
       description: '',
@@ -135,23 +143,16 @@ export const EditableRecipeDetails = ({
       step.description = description
     }
   }
-  const [file, setFile] = useState<any>()
 
-  const onFileChange = async (
-    stepIdx: number,
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const files = event.target.files
-    if (!files) return
-
-    setFile(files[0])
-    const imageUploadUrls = await getUploadUrl(files[0].type.split('/')[1])
-    await uploadFile(imageUploadUrls.uploadUrl, file).then(() => {
-      let step = cookSteps.find((s) => s.order === stepIdx)
-      if (step) {
-        step.imageUrl = imageUploadUrls.imgUrl
-        setCookingSteps([...cookSteps])
-      }
+  const onFileChange = (stepIdx: number, file: any) => {
+    getUploadUrl('').then((result) => {
+      uploadFile(result.uploadUrl, file).then(() => {
+        let step = cookSteps.find((s) => s.order === stepIdx)
+        if (step) {
+          step.imageUrl = result.imgUrl
+          setCookingSteps([...cookSteps])
+        }
+      })
     })
   }
 
@@ -315,25 +316,20 @@ export const EditableRecipeDetails = ({
                           </Grid.Column>
                           <Grid.Column width={6}>
                             {step.imageUrl.length === 0 ? (
-                              <Form.Field>
+                              <FilePicker
+                                extensions={['jpeg', 'png', 'jpg']}
+                                maxSize={10}
+                                onChange={(FileObject: any) =>
+                                  onFileChange(step.order, FileObject)
+                                }
+                                onError={(errMsg: any) => alert(errMsg)}
+                              >
                                 <Button
                                   content="Add Image"
                                   labelPosition="left"
                                   icon="image"
-                                  //@ts-ignore
-                                  onClick={() => fileInputRef.current.click()}
                                 />
-                                <input
-                                  //@ts-ignore
-                                  ref={fileInputRef}
-                                  type="file"
-                                  accept="image/jpeg"
-                                  hidden
-                                  onChange={(event) =>
-                                    onFileChange(step.order, event)
-                                  }
-                                />
-                              </Form.Field>
+                              </FilePicker>
                             ) : (
                               <Container>
                                 <Image src={step.imageUrl} />
