@@ -141,6 +141,7 @@ export const EditableRecipeDetails = ({
     let step = cookSteps.find((s) => s.order === stepIdx)
     if (step) {
       step.description = description
+      setCookingSteps([...cookSteps])
     }
   }
 
