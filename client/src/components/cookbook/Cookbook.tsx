@@ -31,7 +31,7 @@ export const Cookbook = ({ auth, history }: CookbookProps) => {
 
   return (
     <>
-      <Button icon onClick={() => history.push(`/recipes/new`)}>
+      <Button color="teal" icon onClick={() => history.push(`/recipes/new`)}>
         Add Recipe <Icon name="plus" />
       </Button>
       <Divider></Divider>

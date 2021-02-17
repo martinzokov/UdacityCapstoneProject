@@ -48,10 +48,12 @@ const RecipeDetails = ({ match, history }: RecipeDetailsProps) => {
           </Grid.Column>
           <Grid.Column width={3}>
             <Button
+              color="olive"
               icon="pencil"
               onClick={(_) => history.push(`/recipes/${recipeId}/edit`)}
             />
             <Button
+              color="red"
               icon="trash"
               onClick={(_) =>
                 deleteRecipe(recipeId).then(() => history.push(`/`))

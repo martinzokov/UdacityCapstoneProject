@@ -359,7 +359,9 @@ export const EditableRecipeDetails = ({
             <Button onClick={handleAddStep} icon="plus" />
           </Grid.Column>
         </Grid.Row>
-        <Button onClick={onSaveRecipe}>Save Recipe</Button>
+        <Button color="teal" onClick={onSaveRecipe}>
+          Save Recipe
+        </Button>
       </Grid>
     </Form>
   )
