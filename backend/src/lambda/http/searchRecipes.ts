@@ -11,7 +11,7 @@ import { getUserId } from "../utils";
 import { createLogger } from "../../utils/logger";
 import { searchRecipesIndex } from "../../businessLayer/searchActions";
 import { Recipe } from "../../models/Recipe";
-const logger = createLogger("getTodos");
+const logger = createLogger("recipeSearch");
 
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
@@ -56,6 +56,6 @@ export const handler: APIGatewayProxyHandler = async (
       body: JSON.stringify({ recipes }),
     };
   } catch (error) {
-    logger.error(`error during recipe fetch ${error}`);
+    logger.error(`error during recipe search ${error}`);
   }
 };

@@ -37,7 +37,7 @@ custom:
       port: 8000
       inMemory: true
       migrate: true
-    stages: # Add this section of the config
+    stages:
       - dev
 
   documentation:
@@ -46,13 +46,13 @@ custom:
         version: v1.0.0
         title: Udagram API
         description: Serverless application for managing your own cookbook
-    # models:
-    #   - name: CreateTodoRequest
-    #     contentType: application/json
-    #     schema: ${file(models/create-todo-request.json)}
-    #   - name: UpdateTodoRequest
-    #     contentType: application/json
-    #     schema: ${file(models/update-todo-request.json)}
+    models:
+      - name: CreateRecipeRequest
+        contentType: application/json
+        schema: ${file(models/create-recipe-request.json)}
+      - name: UpdateRecipeRequest
+        contentType: application/json
+        schema: ${file(models/update-recipe-request.json)}
 
 functions:
   Auth:
@@ -107,9 +107,9 @@ functions:
           cors: true
           reqValidatorName: RequestBodyValidator
           authorizer: Auth
-          # documentation:
-          #   requestModels:
-          #     'application/json': CreateTodoRequest
+          documentation:
+            requestModels:
+              "application/json": CreateRecipeRequest
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -129,9 +129,9 @@ functions:
           cors: true
           reqValidatorName: RequestBodyValidator
           authorizer: Auth
-          # documentation:
-          #   requestModels:
-          #     'application/json': UpdateTodoRequest
+          documentation:
+            requestModels:
+              "application/json": UpdateRecipeRequest
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -151,9 +151,7 @@ functions:
           cors: true
           reqValidatorName: RequestBodyValidator
           authorizer: Auth
-          # documentation:
-          #   requestModels:
-          #     'application/json': UpdateTodoRequest
+
     iamRoleStatements:
       - Effect: Allow
         Action:

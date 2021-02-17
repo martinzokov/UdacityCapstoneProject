@@ -34,17 +34,20 @@ export const Cookbook = ({ auth, history }: CookbookProps) => {
       <Button icon onClick={() => history.push(`/recipes/new`)}>
         Add Recipe <Icon name="plus" />
       </Button>
-      {data ? (
-        data.map((item: Recipe) => (
-          <RecipeListItem
-            history={history}
-            key={item.partitionKey}
-            recipeItem={item}
-          />
-        ))
-      ) : (
-        <></>
-      )}
+      <Divider></Divider>
+      <Card.Group>
+        {data ? (
+          data.map((item: Recipe) => (
+            <RecipeListItem
+              history={history}
+              key={item.partitionKey}
+              recipeItem={item}
+            />
+          ))
+        ) : (
+          <></>
+        )}
+      </Card.Group>
     </>
   )
 }

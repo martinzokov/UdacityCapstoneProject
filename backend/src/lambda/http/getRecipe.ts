@@ -9,7 +9,7 @@ import {
 import { getRecipe } from "../../businessLayer/recipesActions";
 import { getUserId } from "../utils";
 import { createLogger } from "../../utils/logger";
-const logger = createLogger("getTodos");
+const logger = createLogger("getRecipe");
 
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent

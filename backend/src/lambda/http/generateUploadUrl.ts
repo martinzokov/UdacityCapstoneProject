@@ -12,7 +12,7 @@ import {
 import { getUserId } from "../utils";
 import { createLogger } from "../../utils/logger";
 
-const logger = createLogger("addImageToTodo");
+const logger = createLogger("imageUrlGenerator");
 
 const XAWS = AWSXRay.captureAWS(AWS);
 
@@ -54,9 +54,13 @@ async function createImage(userId: string, imageId: string, fileType: string) {
 }
 
 function getUploadUrl(imageId: string, fileType: string) {
-  return s3.getSignedUrl("putObject", {
-    Bucket: bucketName,
-    Key: `${imageId}`,
-    Expires: urlExpiration,
-  });
+  try {
+    return s3.getSignedUrl("putObject", {
+      Bucket: bucketName,
+      Key: `${imageId}`,
+      Expires: urlExpiration,
+    });
+  } catch (error) {
+    logger.error(error);
+  }
 }

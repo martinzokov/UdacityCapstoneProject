@@ -35,11 +35,3 @@ export async function updateRecipe(
 export async function deleteRecipe(recipeId: string, userId: string) {
   return await recipesRepo.deleteRecipe(recipeId, userId);
 }
-
-// export async function checkTodoExists(todoId: string, userId: string) {
-//   return await todoRepo.checkTodoExists(todoId, userId)
-// }
-
-// export async function saveImage(todoId: string, userId: string, imageUrl: string){
-//   return await todoRepo.saveImage(todoId, userId, imageUrl)
-// }

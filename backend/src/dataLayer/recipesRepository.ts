@@ -10,7 +10,7 @@ import { createLogger } from "../utils/logger";
 import { UpdateTodoRequest } from "../requests/UpdateTodoRequest";
 import { UpgradeRequired } from "http-errors";
 import * as uuid from "uuid";
-const logger = createLogger("todoRepository");
+const logger = createLogger("recipeRepository");
 
 export class RecipesRepository {
   constructor(
@@ -111,38 +111,6 @@ export class RecipesRepository {
         Key: {
           partitionKey: recipeId,
           sortKey: userId,
-        },
-      })
-      .promise();
-  }
-
-  async checkTodoExists(todoId: string, userId: string) {
-    const result = await this.docClient
-      .get({
-        TableName: this.recipesTable,
-        Key: {
-          todoId: todoId,
-          userId: userId,
-        },
-      })
-      .promise();
-
-    console.log("Get todo: ", result);
-    return !!result.Item;
-  }
-
-  async saveImage(todoId: string, userId: string, imageUrl: string) {
-    logger.info("Saving image to todo item");
-    await this.docClient
-      .update({
-        TableName: this.recipesTable,
-        Key: {
-          todoId: todoId,
-          userId: userId,
-        },
-        UpdateExpression: "set attachmentUrl = :attachment",
-        ExpressionAttributeValues: {
-          ":attachment": imageUrl,
         },
       })
       .promise();
